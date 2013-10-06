@@ -16,7 +16,7 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
 public class ElasticsearchBulkLoader {
     
-    private static Log log = LogFactory.getLog(ElasticSearchBulkLoader.class);
+    private static Log log = LogFactory.getLog(ElasticsearchBulkLoader.class);
     public static void main(String args[]) throws Exception {
 	
 	log.info(String.format("%s %s %s", args[0], args[1], args[2]));
@@ -24,7 +24,7 @@ public class ElasticsearchBulkLoader {
 	Configuration conf = new Configuration();
 
 	Job job = new Job(conf, args[0]);
-	job.setJarByClass(ElasticSearchBulkLoader.class);
+	job.setJarByClass(ElasticsearchBulkLoader.class);
 	job.setMapperClass(IndexFilesMapper.class);
 	job.setNumReduceTasks(0);
 	job.setMapOutputKeyClass(NullWritable.class);
