@@ -55,7 +55,7 @@
 		<testSourceDirectory>src/test</testSourceDirectory>
 		<resources>
 			<resource>
-				<directory>${basedir}/resources</directory>
+				<directory>src/main/resources</directory>
 			</resource>
 		</resources>
 		<plugins>
@@ -85,6 +85,18 @@
 					<target>1.6</target>
 				</configuration>
 			</plugin>
+			 <plugin>
+			    <groupId>org.apache.maven.plugins</groupId>
+			    <artifactId>maven-jar-plugin</artifactId>
+			    <configuration>
+			      <archive>
+			        <manifest>
+			          <addClasspath>true</addClasspath>
+			          <mainClass>com.thinkbiganalytics.esbulkloader.ElasticsearchBulkLoader</mainClass>
+			        </manifest>
+			      </archive>
+			    </configuration>
+			  </plugin>
 		</plugins>
 	</build>
 
