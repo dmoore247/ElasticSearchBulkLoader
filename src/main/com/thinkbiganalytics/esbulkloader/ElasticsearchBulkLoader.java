@@ -14,7 +14,7 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
-public class ElasticSearchBulkLoader {
+public class ElasticsearchBulkLoader {
     
     private static Log log = LogFactory.getLog(ElasticSearchBulkLoader.class);
     public static void main(String args[]) throws Exception {
