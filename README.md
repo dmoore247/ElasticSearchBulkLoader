@@ -1,6 +1,28 @@
 ElasticSearchBulkLoader
 =======================
 
+## Description
+A package to bulkload and index JSON formatted records, each record in the form of:
+``` {"_id":"id1234", "key1":"value1", "key2":"value2"}\n```
+
+Given the index and type parameters, the mapper will create the index command fragment
+and append it to one JSON record. This combined value is sent to the OutputFormatter
+for buffering and transmittial to Elasticsearch.
+
+Example mapper output:
+```
+{index:{"_index":"default","_type":"mytype","_id":"id1234"}}\n
+{"_id":"id1234", "key1":"value1", "key2":"value2"}\n
+```
+
+
+# Parameters
+ - esbl.host        : defaults to localhost
+ - esbl.port        : defaults to 9200
+ - esbl.index       : defaults to 'default'
+ - esbl.type        : defaults to 'default'
+ - esbl.index_field : defaults to '_id'
+
 ## Build
 
 # Setup Maven
@@ -8,6 +30,7 @@ ElasticSearchBulkLoader
 
 # Create jar files (this package plus this package and all dependencies)
 mvn package
+
 
 
 ## Usage:
