@@ -9,6 +9,10 @@ import org.apache.hadoop.mapreduce.OutputFormat;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 
+/**
+ * Setup OutputFormat for injecting _bulk api commands into Elasticsearch
+ *
+ */
 public class ElasticsearchBulkFormat extends OutputFormat<Text, Text> {
 
     @Override

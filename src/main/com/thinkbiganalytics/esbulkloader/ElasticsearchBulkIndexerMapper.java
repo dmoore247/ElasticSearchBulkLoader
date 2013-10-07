@@ -25,7 +25,7 @@ public class ElasticsearchBulkIndexerMapper extends
     JSONParser p = new JSONParser(JSONParser.MODE_PERMISSIVE);
     String esIndex;
     String esType;
-    String esIndexField = "_id";
+    String esIndexField;
     String indexFormatString;
 
     @Override
@@ -33,11 +33,15 @@ public class ElasticsearchBulkIndexerMapper extends
 	    InterruptedException {
 	esIndex = context.getConfiguration().get("esbl.index");
 	esType = context.getConfiguration().get("esbl.type");
-	esIndexField = (null == context.getConfiguration().get(
-		"esbl.index_field") ? esIndexField : context.getConfiguration()
-		.get("esbl.index_field"));
+	esIndexField = context.getConfiguration().get("esbl.index_field");
+
+	esIndex = (null == esIndex ? "default" : esIndex);
+	esType = (null == esType ? "default" : esType);
+	esIndexField = (null == esIndexField ? "_id" : esIndexField);
+	
 	indexFormatString = "{\"index\":{ \"_index\":\"" + esIndex
 		+ "\", \"_type\":\"" + esType + "\", \"_id\":\"%s\" } }\n%s\n";
+	log.info("Index format string: " + indexFormatString);
     }
 
     @Override
@@ -52,8 +56,7 @@ public class ElasticsearchBulkIndexerMapper extends
 	    context.write(null,
 		    new Text(String.format(indexFormatString, id, value)));
 	} catch (Exception e) {
-	    // TODO Auto-generated catch block
-	    e.printStackTrace();
+	    log.error(e.toString());
 	    throw new IOException(value.toString(), e);
 	}
 

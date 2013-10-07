@@ -6,64 +6,81 @@ import java.io.InputStreamReader;
 
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpStatus;
-import org.apache.commons.httpclient.methods.PutMethod;
+import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.methods.StringRequestEntity;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 
-public class ElasticsearchRecordWriter extends RecordWriter<Text, Text>{
+/**
+ * 
+ * 
+ */
+public class ElasticsearchRecordWriter extends RecordWriter<Text, Text> {
+    private static Log log = LogFactory.getLog(ElasticsearchRecordWriter.class);
+
+    PostMethod method;
+    final String apiUrl;
 
     public ElasticsearchRecordWriter(TaskAttemptContext context) {
-	// TODO Auto-generated constructor stub
+	String host = context.getConfiguration().get("esbl.host");
+	String port = context.getConfiguration().get("esbl.port");
+	host = (null == host ? "localhost" : host);
+	port = (null == port ? "9200" : port);
+	apiUrl = String.format("http://%s:%s/_bulk", host, port);
+
     }
 
     @Override
     public void write(Text key, Text value) throws IOException,
 	    InterruptedException {
-	PutMethod method = new PutMethod("http://localhost:9200/tv_perf_v3/voters/_bulk");
 
+	log.info(value.toString());
+	method = new PostMethod(apiUrl);
 	method.setRequestEntity(new StringRequestEntity(value.toString(),
 		"text/json", "UTF-8"));
 
-	System.out.println(value);
-
 	BufferedReader br = null;
 	HttpClient client = new HttpClient();
-	client.getParams().setParameter("http.useragent", "ESBL");
 	try {
 	    int returnCode = client.executeMethod(method);
 
 	    if (returnCode == HttpStatus.SC_NOT_IMPLEMENTED) {
-		System.err
-			.println("The Post method is not implemented by this URI");
+		log.error(String.format(
+			"The Post method is not implemented by this URI (%s)",
+			apiUrl));
 		// still consume the response body
 		method.getResponseBodyAsString();
 	    } else {
 		br = new BufferedReader(new InputStreamReader(
 			method.getResponseBodyAsStream()));
+		// if (log.isInfoEnabled()) {
 		String readLine;
 		while (((readLine = br.readLine()) != null)) {
-		    System.err.println(readLine);
+		    System.out.println(readLine);
 		}
+		// }
 	    }
 	} catch (Exception e) {
-	    System.err.println(e);
+	    log.error(e);
 	} finally {
-	    method.releaseConnection();
 	    if (br != null) {
 		try {
 		    br.close();
 		} catch (Exception fe) {
+		    log.error(fe);
 		}
 	    }
 	}
-    } 
+    }
 
     @Override
     public void close(TaskAttemptContext arg0) throws IOException,
 	    InterruptedException {
-	// TODO Auto-generated method stub
+	method.releaseConnection();
+
     }
 
 }
