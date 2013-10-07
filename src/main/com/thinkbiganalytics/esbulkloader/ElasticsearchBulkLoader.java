@@ -50,15 +50,21 @@ public class ElasticsearchBulkLoader extends Configured implements Tool {
 	job.setMapOutputValueClass(Text.class);
 	job.setInputFormatClass(TextInputFormat.class);
 	job.setOutputFormatClass(ElasticsearchBulkFormat.class);
+	job.setUserClassesTakesPrecedence(true);
 	
 	log.info("Input  Paths: " + FileInputFormat.getInputPaths(job)[0].toString());
 	log.info("Output Paths: " + FileOutputFormat.getOutputPath(job).toString());
 
+	long startTime = System.currentTimeMillis();
 	job.submit();
 	log.info(String.format("Job submitted %s",job.getJobID()));
 	// actually run the job
 	boolean success = job.waitForCompletion(true);
 	log.info("Job completed, success="+success);
+	
+	long jobTimeMillis = System.currentTimeMillis() - startTime;
+	log.info(String.format("Job Time : %d seconds", jobTimeMillis/1000));
+
 	return (success ? 0 : 1);
     }
 

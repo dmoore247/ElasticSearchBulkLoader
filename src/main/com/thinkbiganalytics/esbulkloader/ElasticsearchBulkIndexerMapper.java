@@ -11,6 +11,7 @@ import org.apache.hadoop.mapreduce.Mapper;
 
 import net.minidev.json.JSONObject;
 import net.minidev.json.parser.JSONParser;
+import net.minidev.json.parser.ParseException;
 
 /**
  * Convert JSON records into Elasticsearch bulk index commands
@@ -45,8 +46,8 @@ public class ElasticsearchBulkIndexerMapper extends
 	esType = (null == esType ? DEFAULT_TYPE : esType);
 	esIndexField = (null == esIndexField ? "_id" : esIndexField);
 	
-	indexFormatString = "{\"index\":{ \"_index\":\"" + esIndex
-		+ "\", \"_type\":\"" + esType + "\", \"_id\":\"%s\" } }\n%s\n";
+	indexFormatString = "{index:{ _index:\"" + esIndex
+		+ "\", _type:\"" + esType + "\", _id:\"%s\"}}\n";
 	log.info("Index format string: " + indexFormatString);
     }
 
@@ -56,12 +57,21 @@ public class ElasticsearchBulkIndexerMapper extends
 
 	try {
 	    // parse JSON to get id field
-	    String id = (String) ((JSONObject) p.parse(value.toString()))
-		    .get(esIndexField);
-
-	    context.write(null,
-		    new Text(String.format(indexFormatString, id, value)));
-	} catch (Exception e) {
+	    String s = value.toString();
+	    JSONObject o = ((JSONObject) p.parse(s));
+	    String id = (String) o.get(esIndexField);
+	    String idxString = String.format(indexFormatString,id);
+	    
+	    StringBuffer sb = new StringBuffer(idxString.length()+s.length()+10);
+	    sb.append(idxString);
+	    sb.append(s);
+	    sb.append("\n");
+	    context.write(null, new Text(sb.toString()));
+	    
+	} catch (ParseException e) {
+	    log.error(e.toString());
+	    throw new IOException(value.toString(), e);
+	} catch (InterruptedException e) {
 	    log.error(e.toString());
 	    throw new IOException(value.toString(), e);
 	}

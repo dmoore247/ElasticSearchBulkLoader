@@ -17,44 +17,35 @@ import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 
 /**
- * 
- * 
+ * Buffer up JSON bulk commands passed as Text values to this writer and then
+ * transmit them to Elasticsearch. 
  */
 public class ElasticsearchRecordWriter extends RecordWriter<Text, Text> {
-    private static final int DEFAULT_BUFFER_SIZE = 100000;
-    private static final String ESBL_BUFFER_SIZE = "esbl.buffer_size";
-    private static final String DEFAULT_ES_PORT = "9200";
-    private static final String DEFAULT_ES_HOST = "localhost";
-    private static final String ESBL_PORT = "esbl.port";
-    private static final String ESBL_HOST = "esbl.host";
 
     private static Log log = LogFactory.getLog(ElasticsearchRecordWriter.class);
 
     private PostMethod method;
-    private final String apiUrl;
-    private final int bufferSize;
     private final StringBuffer buffer;
-    private String host;
-    private int port;
+    private final ElasticsearchConfig config;
 
     public ElasticsearchRecordWriter(TaskAttemptContext context) {
-	host = context.getConfiguration().get(ESBL_HOST);
-	String portString = context.getConfiguration().get(ESBL_PORT);
-	String size = context.getConfiguration().get(ESBL_BUFFER_SIZE);
-	host = (null == host ? DEFAULT_ES_HOST : host);
-	port = Integer.parseInt((null == portString ? DEFAULT_ES_PORT : portString));
-	bufferSize = (null == size ? DEFAULT_BUFFER_SIZE : Integer.parseInt(size));
-	buffer = new StringBuffer(bufferSize);
-	apiUrl = String.format("http://%s:%s/_bulk", host, port);
+	config = new ElasticsearchConfig(context.getConfiguration());
+
+	// Buffer for messages
+	buffer = new StringBuffer(config.getBufferSize());
     }
 
+    /**
+     * Buffer the Text value and check the buffer for flushing. Check buffer
+     * will flush if needed.
+     */
     @Override
     public void write(Text key, Text value) throws IOException,
 	    InterruptedException {
 
 	buffer.append(value.toString());
-	log.debug(value.toString());
-	
+	// log.debug(value.toString());
+
 	checkFlush();
     }
 
@@ -66,54 +57,79 @@ public class ElasticsearchRecordWriter extends RecordWriter<Text, Text> {
     }
 
     private void checkFlush() throws UnsupportedEncodingException {
-	if (buffer.length()>this.bufferSize) {
+	if (buffer.length() > config.getBufferSize()) {
 	    flush();
 	    buffer.setLength(0);
 	}
     }
-    
-    private void flush() throws UnsupportedEncodingException {
-	method = new PostMethod(apiUrl);
 
+    /**
+     * Send buffer to server
+     * 
+     * @throws UnsupportedEncodingException
+     */
+    private void flush() throws UnsupportedEncodingException {
+	method = new PostMethod(config.getApiUrl());
 	method.setRequestEntity(new StringRequestEntity(buffer.toString(),
 		"text/json", "UTF-8"));
 
+	executeMethod();
+
+    }
+
+    /**
+     * Run the HTTP method and transmit results to Elasticsearch
+     */
+    protected void executeMethod() {
 	BufferedReader br = null;
+
+	try {
+	    int returnCode = getHttpClient().executeMethod(method);
+
+	    if (returnCode == HttpStatus.SC_NOT_IMPLEMENTED) {
+		log.error(String.format(
+			"The Post method is not implemented by this URL (%s)",
+			method.getURI()));
+	    }
+
+	    // Emit server response for debugging
+	    if (log.isDebugEnabled()) {
+		br = new BufferedReader(new InputStreamReader(
+			method.getResponseBodyAsStream()));
+
+		String readLine;
+		while (((readLine = br.readLine()) != null)) {
+		    System.out.println(readLine);
+		}
+	    } else {
+		// still consume the response body
+		// method.getResponseBodyAsString();
+	    }
+
+	} catch (IOException ioe) {
+	    log.error(ioe);
+	} finally {
+	    if (null != br) {
+		try {
+		    br.close();
+		} catch (IOException cioe) {
+		    log.error(cioe);
+		}
+	    }
+	}
+    }
+
+    /**
+     * Setup HttpClient with optimal settings
+     * 
+     * @return HttpClient
+     */
+    protected HttpClient getHttpClient() {
 	HttpClientParams params = new HttpClientParams();
 	params.setBooleanParameter("http.tcp.nodelay", true);
 	HttpClient client = new HttpClient();
 	client.setParams(params);
-	try {
-	    
-	    int returnCode = client.executeMethod(method);
-
-	    if (returnCode == HttpStatus.SC_NOT_IMPLEMENTED) {
-		log.error(String.format(
-			"The Post method is not implemented by this URI (%s)",
-			apiUrl));
-		// still consume the response body
-		method.getResponseBodyAsString();
-	    } else {
-		br = new BufferedReader(new InputStreamReader(
-			method.getResponseBodyAsStream()));
-		if (log.isDebugEnabled()) {
-		    String readLine;
-		    while (((readLine = br.readLine()) != null)) {
-			System.out.println(readLine);
-		    }
-		}
-	    }
-	} catch (Exception e) {
-	    log.error(e);
-	} finally {
-	    if (br != null) {
-		try {
-		    br.close();
-		} catch (Exception fe) {
-		    log.error(fe);
-		}
-	    }
-	}
+	return client;
     }
 
 }
