@@ -9,6 +9,7 @@ import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.methods.StringRequestEntity;
+import org.apache.commons.httpclient.params.HttpClientParams;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.Text;
@@ -32,14 +33,16 @@ public class ElasticsearchRecordWriter extends RecordWriter<Text, Text> {
     private PostMethod method;
     private final String apiUrl;
     private final int bufferSize;
-    private final StringBuffer buffer ;
+    private final StringBuffer buffer;
+    private String host;
+    private int port;
 
     public ElasticsearchRecordWriter(TaskAttemptContext context) {
-	String host = context.getConfiguration().get(ESBL_HOST);
-	String port = context.getConfiguration().get(ESBL_PORT);
+	host = context.getConfiguration().get(ESBL_HOST);
+	String portString = context.getConfiguration().get(ESBL_PORT);
 	String size = context.getConfiguration().get(ESBL_BUFFER_SIZE);
 	host = (null == host ? DEFAULT_ES_HOST : host);
-	port = (null == port ? DEFAULT_ES_PORT : port);
+	port = Integer.parseInt((null == portString ? DEFAULT_ES_PORT : portString));
 	bufferSize = (null == size ? DEFAULT_BUFFER_SIZE : Integer.parseInt(size));
 	buffer = new StringBuffer(bufferSize);
 	apiUrl = String.format("http://%s:%s/_bulk", host, port);
@@ -50,7 +53,7 @@ public class ElasticsearchRecordWriter extends RecordWriter<Text, Text> {
 	    InterruptedException {
 
 	buffer.append(value.toString());
-	log.info(value.toString());
+	log.debug(value.toString());
 	
 	checkFlush();
     }
@@ -71,12 +74,17 @@ public class ElasticsearchRecordWriter extends RecordWriter<Text, Text> {
     
     private void flush() throws UnsupportedEncodingException {
 	method = new PostMethod(apiUrl);
+
 	method.setRequestEntity(new StringRequestEntity(buffer.toString(),
 		"text/json", "UTF-8"));
 
 	BufferedReader br = null;
+	HttpClientParams params = new HttpClientParams();
+	params.setBooleanParameter("http.tcp.nodelay", true);
 	HttpClient client = new HttpClient();
+	client.setParams(params);
 	try {
+	    
 	    int returnCode = client.executeMethod(method);
 
 	    if (returnCode == HttpStatus.SC_NOT_IMPLEMENTED) {
@@ -88,12 +96,12 @@ public class ElasticsearchRecordWriter extends RecordWriter<Text, Text> {
 	    } else {
 		br = new BufferedReader(new InputStreamReader(
 			method.getResponseBodyAsStream()));
-		// if (log.isInfoEnabled()) {
-		String readLine;
-		while (((readLine = br.readLine()) != null)) {
-		    System.out.println(readLine);
+		if (log.isDebugEnabled()) {
+		    String readLine;
+		    while (((readLine = br.readLine()) != null)) {
+			System.out.println(readLine);
+		    }
 		}
-		// }
 	    }
 	} catch (Exception e) {
 	    log.error(e);
