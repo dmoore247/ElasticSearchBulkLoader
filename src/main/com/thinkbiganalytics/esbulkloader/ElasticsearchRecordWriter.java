@@ -19,18 +19,22 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
  * 
  */
 public class ElasticsearchRecordWriter extends RecordWriter<Text, Text> {
+    private static final String DEFAULT_ES_PORT = "9200";
+    private static final String DEFAULT_ES_HOST = "localhost";
+    private static final String ESBL_PORT = "esbl.port";
+    private static final String ESBL_HOST = "esbl.host";
+
     private static Log log = LogFactory.getLog(ElasticsearchRecordWriter.class);
 
     PostMethod method;
     final String apiUrl;
 
     public ElasticsearchRecordWriter(TaskAttemptContext context) {
-	String host = context.getConfiguration().get("esbl.host");
-	String port = context.getConfiguration().get("esbl.port");
-	host = (null == host ? "localhost" : host);
-	port = (null == port ? "9200" : port);
+	String host = context.getConfiguration().get(ESBL_HOST);
+	String port = context.getConfiguration().get(ESBL_PORT);
+	host = (null == host ? DEFAULT_ES_HOST : host);
+	port = (null == port ? DEFAULT_ES_PORT : port);
 	apiUrl = String.format("http://%s:%s/_bulk", host, port);
-
     }
 
     @Override
@@ -80,7 +84,6 @@ public class ElasticsearchRecordWriter extends RecordWriter<Text, Text> {
     public void close(TaskAttemptContext arg0) throws IOException,
 	    InterruptedException {
 	method.releaseConnection();
-
     }
 
 }

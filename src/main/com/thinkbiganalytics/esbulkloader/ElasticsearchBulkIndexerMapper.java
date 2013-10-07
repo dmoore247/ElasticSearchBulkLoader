@@ -19,6 +19,12 @@ import net.minidev.json.parser.JSONParser;
 public class ElasticsearchBulkIndexerMapper extends
 	Mapper<LongWritable, Text, NullWritable, Text> {
 
+    private static final String DEFAULT_INDEX = "default";
+    private static final String DEFAULT_TYPE = "default";
+    private static final String ESBL_INDEX_FIELD = "esbl.index_field";
+    private static final String ESBL_TYPE = "esbl.type";
+    private static final String ESBL_INDEX = "esbl.index";
+
     private static Log log = LogFactory
 	    .getLog(ElasticsearchBulkIndexerMapper.class);
 
@@ -31,12 +37,12 @@ public class ElasticsearchBulkIndexerMapper extends
     @Override
     protected void setup(Context context) throws IOException,
 	    InterruptedException {
-	esIndex = context.getConfiguration().get("esbl.index");
-	esType = context.getConfiguration().get("esbl.type");
-	esIndexField = context.getConfiguration().get("esbl.index_field");
+	esIndex = context.getConfiguration().get(ESBL_INDEX);
+	esType = context.getConfiguration().get(ESBL_TYPE);
+	esIndexField = context.getConfiguration().get(ESBL_INDEX_FIELD);
 
-	esIndex = (null == esIndex ? "default" : esIndex);
-	esType = (null == esType ? "default" : esType);
+	esIndex = (null == esIndex ? DEFAULT_INDEX : esIndex);
+	esType = (null == esType ? DEFAULT_TYPE : esType);
 	esIndexField = (null == esIndexField ? "_id" : esIndexField);
 	
 	indexFormatString = "{\"index\":{ \"_index\":\"" + esIndex
