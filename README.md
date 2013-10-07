@@ -17,11 +17,11 @@ Example mapper output:
 
 
 # Parameters
- - esbl.host        : defaults to localhost
- - esbl.port        : defaults to 9200
- - esbl.index       : defaults to 'default'
- - esbl.type        : defaults to 'default'
- - esbl.index_field : defaults to '_id'
+ - `esbl.host`        : defaults to localhost
+ - `esbl.port`        : defaults to 9200
+ - `esbl.index`       : defaults to 'default'
+ - `esbl.type`        : defaults to 'default'
+ - `esbl.index_field` : defaults to '_id'
 
 ## Build
 
