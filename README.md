@@ -42,14 +42,15 @@ It's important to put the -D parameters first in the command line.
 Beyond the hadoop parameters, the first parameter is the input path, and the second is the output path.
 
 ### Standalone dev test with Hadoop local mode 
-This runs the
- - `com.thinkbiganalytics.esbulkloader.ElasticsearchBulkLoader` for default main class, 
- - `com.thinkbiganalytics.esbulkloader.ElasticsearchBulkIndexerMapper` as the indexing mapper,
- - `com.thinkbiganalytics.esbulkloader.ElasticsearchBulkFormat` as the OutputFormat class.
 ```
 java -jar target/thinkbig-elasticsearch-loader-1.0-SNAPSHOT-jar-with-dependencies.jar \
   -Desbl.index=myindex -Desbl.type=mytype -Desbl.buffer_size=800000 -Desbl.host=localhost -Desbl.port=9200 myinput.json myoutput_directory
 ```
+
+Will run the
+ - `com.thinkbiganalytics.esbulkloader.ElasticsearchBulkLoader` for default main class, 
+ - `com.thinkbiganalytics.esbulkloader.ElasticsearchBulkIndexerMapper` as the indexing mapper,
+ - `com.thinkbiganalytics.esbulkloader.ElasticsearchBulkFormat` as the OutputFormat class.
 
 ### Hadoop jar
 ```
