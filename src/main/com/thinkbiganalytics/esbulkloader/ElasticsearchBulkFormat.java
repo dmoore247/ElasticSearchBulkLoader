@@ -21,7 +21,7 @@ public class ElasticsearchBulkFormat extends OutputFormat<Text, Text> {
     public OutputCommitter getOutputCommitter(TaskAttemptContext arg0)
 	    throws IOException, InterruptedException {
 	// TODO Auto-generated method stub
-	return null;
+	return new ElasticsearchBulkLoaderOutputCommitter();
     }
 
     @Override

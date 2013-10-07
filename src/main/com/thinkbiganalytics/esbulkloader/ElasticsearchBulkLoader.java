@@ -21,17 +21,21 @@ public class ElasticsearchBulkLoader extends Configured implements Tool {
 
     public static void main(String[] args) throws Exception {
 	// Use generic options tool runner
-	int exitCode = ToolRunner.run(new ElasticsearchBulkLoader(), args); 
+	Configuration configuration = new Configuration();
+	int exitCode = ToolRunner.run(configuration, new ElasticsearchBulkLoader(), args); 
 	System.exit(exitCode); 
     }
 
     @Override
     public int run(String[] args) throws Exception {
-	System.out.println(String.format("%s %s %s", args[0], args[1], args[2]));
+	System.out.println(args.toString());
 	
-	Configuration conf = new Configuration();
+	Job job = new Job();
+	job.setJobName("BulkESLoader");
 
-	Job job = new Job(conf, args[0]);
+	FileInputFormat.addInputPath(job, new Path(args[0]));
+	FileOutputFormat.setOutputPath(job, new Path(args[1]));
+	
 	job.setJarByClass(ElasticsearchBulkLoader.class);
 	job.setMapperClass(ElasticsearchBulkIndexerMapper.class);
 	job.setNumReduceTasks(0);
@@ -40,9 +44,10 @@ public class ElasticsearchBulkLoader extends Configured implements Tool {
 	job.setInputFormatClass(TextInputFormat.class);
 	job.setOutputFormatClass(ElasticsearchBulkFormat.class);
 	
-	 FileInputFormat.addInputPath(job, new Path(args[1]));
-	 FileOutputFormat.setOutputPath(job, new Path(args[2]));
+	 
+	 System.out.println(job.getConfiguration().toString());
 
+	 job.submit();
 	// actually run the job
 	boolean success = job.waitForCompletion(true);
 	return (success ? 0 : 1);
